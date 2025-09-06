@@ -43,7 +43,7 @@ CMD ["python", "main.py"]
 ├── Dockerfile
 ├── main.py
 ├── requirements.txt
-└── README
+└── README.md
 ```
 
 ---
