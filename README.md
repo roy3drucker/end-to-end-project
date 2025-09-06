@@ -95,5 +95,4 @@ Visit [http://localhost:5001](http://localhost:5001) or `http://<your-ec2-ip>:50
 
 If AWS credentials are not set, the app will fail to connect to AWS and return the following error:
 
-![AWS Credentials Error](error%20messege.png)
-
+![alt text](<error messege.png>)
