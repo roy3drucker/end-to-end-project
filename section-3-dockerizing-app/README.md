@@ -160,6 +160,6 @@ Once the container is running, visit:
 
 When you run the application, it will demonstrate Docker containerization. The app will show an error message since AWS credentials are not configured in this demo:
 
-![alt text](<error messege.png>)
+![Error Message](images/error-message.png)
 
 **This is expected behavior** - the purpose of this project is to demonstrate Docker containerization, not AWS connectivity.
