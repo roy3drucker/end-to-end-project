@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-deployment
+  labels:
+    {{- include "flask-aws-monitor.labels" . | nindent 4 }}
+spec:
+  selector: 
+    matchLabels:
+      {{- include "flask-aws-monitor.selectorLabels" . | nindent 6 }}
+  replicas: {{ .Values.data.replicas }}
+  template:
+    metadata:
+      labels:
+        {{- include "flask-aws-monitor.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: {{ .Release.Name }}-container
+        image: {{ .Values.data.image }}:{{ .Values.data.imagetag }}
+        imagePullPolicy: {{ .Values.data.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.data.targetPort }}
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          value: {{ .Values.env.AWS_ACCESS_KEY_ID | quote }}
+        - name: AWS_SECRET_ACCESS_KEY
+          value: {{ .Values.env.AWS_SECRET_ACCESS_KEY | quote }}
+        - name: AWS_DEFAULT_REGION
+          value: {{ .Values.env.AWS_DEFAULT_REGION | quote }}
+        resources:
+          limits:
+            cpu: {{ .Values.resources.limits.cpu }}
+            memory: {{ .Values.resources.limits.memory }}
+          requests:
+            cpu: {{ .Values.resources.requests.cpu }}
+            memory: {{ .Values.resources.requests.memory }}

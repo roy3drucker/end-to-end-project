@@ -1,0 +1,14 @@
+kind: Service     
+apiVersion: v1     
+metadata:
+  name: {{ .Release.Name }}-service
+  labels:
+    {{- include "flask-aws-monitor.labels" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "flask-aws-monitor.selectorLabels" . | nindent 4 }}    
+  type: {{ if .Values.ingress.enabled }}ClusterIP{{ else }}{{ .Values.data.type }}{{ end }}
+  ports:         
+  - name: {{ .Release.Name }}-service
+    port: {{ .Values.data.port }}
+    targetPort: {{ .Values.data.targetPort }}
