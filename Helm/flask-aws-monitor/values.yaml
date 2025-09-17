@@ -1,26 +1,13 @@
 data:
-  type: LoadBalancer
+  image: nginx
+  imagetag: latest
+  pullPolicy: Always
   port: 5001
   targetPort: 5001
   replicas: 2
-  image: dockerdrucker/flask-aws-app
-  imagetag: latest
-  pullPolicy: Never
+  type: LoadBalancer
 
 ingress:
   enabled: false
   host: flask-aws-monitor.local
   path: /
-
-resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 250m
-    memory: 256Mi
-
-env:
-  AWS_ACCESS_KEY_ID: "AKIAIOSFODNN7EXAMPLE"
-  AWS_SECRET_ACCESS_KEY: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-  AWS_DEFAULT_REGION: "us-east-1"
