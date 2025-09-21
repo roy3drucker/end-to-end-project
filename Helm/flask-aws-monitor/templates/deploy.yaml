@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}  #from RELEASE NAME
+  label:
+    app: {{ .Release.Name }}
+    lang: java
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  replicas: 1  #from values
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: spring-music #from values
+        image: {{ .Values.image }} #from values
+        ports:
+        - containerPort: {{ .Values.port }}
