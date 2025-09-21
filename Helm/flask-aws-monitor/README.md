@@ -301,7 +301,3 @@ After completing this project, you will understand:
 ## 📄 License
 
 This project is part of an **end-to-end DevOps learning demonstration**.
-
----
-
-**Built with ❤️ for DevOps learning and best practices**
