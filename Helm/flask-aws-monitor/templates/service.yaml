@@ -1,14 +1,14 @@
-kind: Service     
-apiVersion: v1     
+kind: Service
+apiVersion: v1
 metadata:
-  name: {{ .Release.Name }}-service
-  labels:
-    {{- include "flask-aws-monitor.labels" . | nindent 4 }}
+  name: {{ .Release.Name }} #from RELEASE NAME
+  label: music
 spec:
   selector:
-    {{- include "flask-aws-monitor.selectorLabels" . | nindent 4 }}    
-  type: {{ if .Values.ingress.enabled }}ClusterIP{{ else }}{{ .Values.data.type }}{{ end }}
-  ports:         
-  - name: {{ .Release.Name }}-service
-    port: {{ .Values.data.port }}
-    targetPort: {{ .Values.data.targetPort }}
+    app: {{ .Release.Name }}
+  type: {{ .Values.servicetype }} #from values
+  ports:
+  - name: http
+    protocol: TCP
+    port: {{ .Values.port }}
+    targetPort: {{ .Values.port }}
