@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Release.Name }}  #from RELEASE NAME
-  label:
+  labels:
     app: {{ .Release.Name }}
     lang: java
 spec:
