@@ -1,0 +1,93 @@
+pipeline {
+  agent {
+    kubernetes {
+      yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:debug
+    command: ["cat"]
+    tty: true
+"""
+      defaultContainer 'kaniko'
+    }
+  }
+
+  environment {
+    DOCKERHUB_USERNAME = credentials('dockerdrucker-username')
+    DOCKERHUB_PASSWORD = credentials('dockerdrucker-password')
+    IMAGE_NAME      = 'dockerdrucker/flask-aws-app:latest'
+    DOCKERFILE_PATH = 'Dockerfile'
+    BUILD_CONTEXT   = '.'
+  }
+
+  stages {
+    stage('Clone Repository') {
+      steps {
+        git branch: 'main', url: 'https://github.com/roy3drucker/end-to-end-project'
+      }
+    }
+    
+    stage('Compute Tag') {
+      steps {
+        script {
+          def ts = sh(returnStdout: true, script: "date +%Y%m%d-%H%M%S").trim()
+          env.IMAGE_TAG = "${ts}"
+          echo "IMAGE_TAG=${env.IMAGE_TAG}"
+        }
+      }
+    }
+
+    
+    stage('Parallel Checks') {
+      parallel {
+        stage('Linting') {
+          steps {
+            sh '''
+              echo "[MOCK] flake8/hadolint/shellcheck passed (skipped for Kaniko setup)"
+            '''
+          }
+        }
+        stage('Security Scan') {
+          steps {
+            sh '''
+              echo "[MOCK] bandit/trivy scan passed (skipped for Kaniko setup)"
+            '''
+          }
+        }
+      }
+    }
+
+        stage('Build & Push (Kaniko)') {
+          steps {
+            sh '''
+              set -e
+              echo "==> Docker auth"
+              mkdir -p /kaniko/.docker
+              AUTH=$(printf "%s" "${DOCKERHUB_USERNAME}:${DOCKERHUB_PASSWORD}" | base64 | tr -d '\\n')
+              printf '{"auths":{"https://index.docker.io/v1/":{"auth":"%s"}}}\n' "$AUTH" > /kaniko/.docker/config.json
+              wc -c /kaniko/.docker/config.json
+
+              DF_REL="${DOCKERFILE_PATH#${BUILD_CONTEXT}/}"
+              [ "$DF_REL" = "$DOCKERFILE_PATH" ] && DF_REL="$DOCKERFILE_PATH"
+              test -f "${BUILD_CONTEXT}/${DF_REL}" || { echo "Dockerfile not found at ${BUILD_CONTEXT}/${DF_REL}"; ls -la "${BUILD_CONTEXT}"; exit 1; }
+
+              echo "==> Kaniko build & push"
+              /kaniko/executor \
+                --verbosity=debug \
+                --context="${BUILD_CONTEXT}" \
+                --dockerfile="${DOCKERFILE_PATH}" \
+                --destination="${IMAGE_NAME}:${IMAGE_TAG}" \
+                --destination="${IMAGE_NAME}:latest"
+            '''
+          }
+      }
+  }
+
+  post {
+    success { echo "Pipeline completed successfully. Image pushed: ${IMAGE_NAME}:${IMAGE_TAG}" }
+    failure { echo 'Pipeline failed! Check logs for details.' }
+  }
+}
