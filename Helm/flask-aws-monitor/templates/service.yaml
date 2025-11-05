@@ -1,12 +1,13 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: {{ .Release.Name }} #from RELEASE NAME
-  labels: music
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
 spec:
   selector:
     app: {{ .Release.Name }}
-  type: {{ .Values.serviceType }} #from values
+  type: {{ .Values.serviceType }}
   ports:
   - name: http
     protocol: TCP
