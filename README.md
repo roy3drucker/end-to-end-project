@@ -20,7 +20,7 @@ This project demonstrates an end-to-end CI/CD pipeline for a Flask-based applica
 ## 📚 Table of Contents
 
 - [Features](#-features)
-- [Architecture Overview](#-architecture-overview)
+- [CI/CD Pipeline Diagram](#cicd-pipeline-diagram)
 - [Prerequisites](#-prerequisites)
 - [Quick Start](#-quick-start)
 - [CI/CD Pipeline with Jenkins](#-cicd-pipeline-with-jenkins)
@@ -42,32 +42,6 @@ This project demonstrates an end-to-end CI/CD pipeline for a Flask-based applica
 
 ---
 
-## 🧱 Architecture Overview
+## 🖼️ CI/CD Pipeline Diagram
 
-```text
-        +------------+         +--------------+
-        |  Developer |  ---->  |  GitHub Repo |
-        +------------+         +--------------+
-                                    |
-                                    v
-                             +------------+
-                             |  Jenkins   |   <-- Triggers build on push
-                             +------------+
-                                  |
-                +----------------+----------------+
-                |                                 |
-        +---------------+                +----------------+
-        |  Kaniko Build |                |  Lint / Scan   |
-        +---------------+                +----------------+
-                |
-                v
-         DockerHub (Image Registry)
-                |
-                v
-      +---------------------+
-      | Kubernetes (Helm)   |
-      |   via Minikube      |
-      +---------------------+
-                |
-                v
-        http://localhost:5001
+![CI/CD Pipeline](./pat)
