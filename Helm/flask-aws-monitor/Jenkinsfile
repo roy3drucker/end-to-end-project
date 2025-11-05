@@ -11,7 +11,7 @@ spec:
     command: ["cat"]
     tty: true
   - name: helm
-    image: lachlanevenson/k8s-helm:v3.12.3
+    image: alpine/helm:3.13.0
     command: ["cat"]
     tty: true
 """
