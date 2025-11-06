@@ -18,6 +18,7 @@ session = boto3.Session(
 ec2_client = session.client("ec2")
 elb_client = session.client("elbv2")
 
+
 @app.route("/")
 def home():
     # Fetch EC2 instances
@@ -116,6 +117,7 @@ def home():
         lb_data=lb_data,
         ami_data=ami_data,
     )
+
 
 if __name__ == "__main__":
     print("Starting Flask on 0.0.0.0:5001")  
