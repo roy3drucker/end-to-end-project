@@ -100,6 +100,9 @@ spec:
             git config --global user.email "jenkins@example.com"
             git config --global user.name "Jenkins CI"
             git config --global --add safe.directory "$(pwd)"
+            git config --global --add safe.directory /home/jenkins/agent/workspace/Jenkins-pipeline
+            git config --global user.email "jenkins@example.com"
+            git config --global user.name "Jenkins CI"
             git add ${HELM_CHART_PATH}/values.yaml
             git commit -m "Update image tag to ${IMAGE_TAG}" || echo "No changes to commit"
             git push origin main
