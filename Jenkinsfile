@@ -26,12 +26,9 @@ spec:
     DOCKERFILE_PATH = 'Dockerfile'
     BUILD_CONTEXT   = 'section-3-dockerizing-app'
     HELM_CHART_PATH = 'Helm/flask-aws-monitor'
-    HELM_RELEASE_NAME = 'flask-aws-monitor'
-    HELM_NAMESPACE  = 'flask-app'
-    HELM_TIMEOUT    = '5m'
-    KUBECONFIG_CREDENTIALS_ID = 'minikube-kubeconfig'
     APP_PORT        = '5001'
     SERVICE_TYPE    = 'LoadBalancer'
+    GIT_CREDENTIALS_ID = 'github-push-token'
   }
 
   stages {
@@ -40,7 +37,7 @@ spec:
         git branch: 'main', url: 'https://github.com/roy3drucker/end-to-end-project'
       }
     }
-    
+
     stage('Compute Tag') {
       steps {
         script {
@@ -51,39 +48,26 @@ spec:
       }
     }
 
-    
-    stage('Parallel Checks') {
-      parallel {
-        stage('Linting') {
-          steps {
-            sh '''
-              echo "[MOCK] flake8/hadolint/shellcheck passed (skipped for Kaniko setup)"
-            '''
-          }
-        }
-        stage('Security Scan') {
-          steps {
-            sh '''
-              echo "[MOCK] bandit/trivy scan passed (skipped for Kaniko setup)"
-            '''
-          }
-        }
+    stage('Linting') {
+      steps {
+        sh '''
+          pip install flake8
+          flake8 section-3-dockerizing-app/
+          
+          wget -O /usr/local/bin/hadolint https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64
+          chmod +x /usr/local/bin/hadolint
+          hadolint section-3-dockerizing-app/Dockerfile
+        '''
       }
     }
 
     stage('Build & Push (Kaniko)') {
       steps {
         sh '''
-          set -euo pipefail
           echo "==> Docker auth"
           mkdir -p /kaniko/.docker
           AUTH=$(printf "%s" "${DOCKERHUB_USERNAME}:${DOCKERHUB_PASSWORD}" | base64 | tr -d '\\n')
           printf '{"auths":{"https://index.docker.io/v1/":{"auth":"%s"}}}\n' "$AUTH" > /kaniko/.docker/config.json
-          wc -c /kaniko/.docker/config.json
-
-          DF_REL="${DOCKERFILE_PATH#${BUILD_CONTEXT}/}"
-          [ "$DF_REL" = "$DOCKERFILE_PATH" ] && DF_REL="$DOCKERFILE_PATH"
-          test -f "${BUILD_CONTEXT}/${DF_REL}" || { echo "Dockerfile not found at ${BUILD_CONTEXT}/${DF_REL}"; ls -la "${BUILD_CONTEXT}"; exit 1; }
 
           echo "==> Kaniko build & push"
           /kaniko/executor \
@@ -96,38 +80,32 @@ spec:
       }
     }
 
-    stage('Deploy to Minikube') {
-      when {
-        expression { return env.KUBECONFIG_CREDENTIALS_ID?.trim() }
-      }
+    stage('Update values.yaml & Push to GitHub') {
       steps {
-        container('helm') {
-          withCredentials([file(credentialsId: env.KUBECONFIG_CREDENTIALS_ID, variable: 'KUBECONFIG_FILE')]) {
-            sh '''
-              set -euo pipefail
-              wget -q -O /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/$(wget -q -O - https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x /usr/local/bin/kubectl
-              export KUBECONFIG="${KUBECONFIG_FILE}"
-              kubectl config use-context minikube
-              kubectl config current-context
-              helm upgrade --install "${HELM_RELEASE_NAME}" "${HELM_CHART_PATH}" \
-                --namespace "${HELM_NAMESPACE}" \
-                --create-namespace \
-                --set-string image=${IMAGE_REPO}:${IMAGE_TAG} \
-                --set-string port=${APP_PORT} \
-                --set-string serviceType=${SERVICE_TYPE} \
-                --wait \
-                --timeout "${HELM_TIMEOUT}"
-              kubectl get pods -n "${HELM_NAMESPACE}" -l app=${HELM_RELEASE_NAME}
-              kubectl get svc -n "${HELM_NAMESPACE}" ${HELM_RELEASE_NAME}
-            '''
-          }
+        withCredentials([usernamePassword(credentialsId: env.GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+          sh '''
+            echo "==> Update image tag in values.yaml"
+            sed -i "s|image: .*|image: ${IMAGE_REPO}:${IMAGE_TAG}|" ${HELM_CHART_PATH}/values.yaml
+
+            echo "==> Git config and push"
+            git config user.email "ci@jenkins.com"
+            git config user.name "Jenkins CI"
+            git remote set-url origin https://${GIT_USER}:${GIT_TOKEN}@github.com/roy3drucker/end-to-end-project.git
+            git add ${HELM_CHART_PATH}/values.yaml
+            git commit -m "CI: Update image tag to ${IMAGE_TAG}"
+            git push origin main
+          '''
         }
       }
     }
   }
 
   post {
-    success { echo "Pipeline completed successfully. Image pushed: ${IMAGE_REPO}:${IMAGE_TAG}" }
-    failure { echo 'Pipeline failed! Check logs for details.' }
+    success {
+      echo "✅ CI pipeline succeeded, Git updated – ArgoCD will deploy."
+    }
+    failure {
+      echo "❌ Pipeline failed. Check logs for errors."
+    }
   }
 }
