@@ -49,6 +49,11 @@ spec:
     }
 
     stage('Linting') {
+      agent {
+        docker {
+          image 'python:3.10'
+        }
+      }
       steps {
         sh '''
           apk update && apk add py3-pip
