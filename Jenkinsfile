@@ -39,6 +39,9 @@ spec:
     HELM_TIMEOUT    = '5m'
     APP_PORT        = '5001'
     SERVICE_TYPE    = 'LoadBalancer'
+    GIT_CREDENTIALS_ID = 'github-credentials'
+    GIT_USER_EMAIL = 'jenkins@example.com'
+    GIT_USER_NAME  = 'Jenkins CI'
   }
 
   stages {
