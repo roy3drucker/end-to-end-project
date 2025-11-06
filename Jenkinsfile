@@ -96,10 +96,11 @@ spec:
 
     stage('Update values.yaml & Push to GitHub') {
       steps {
-        container('git') {
+        container('git') { 
+          withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
           sh '''
             sed -i "s|^image:.*|image: ${IMAGE_REPO}:${IMAGE_TAG}|" ${HELM_CHART_PATH}/values.yaml
-
+            
             git config --global user.email "jenkins@example.com"
             git config --global user.name "Jenkins CI"
             git config --global --add safe.directory "$(pwd)"
