@@ -51,6 +51,7 @@ spec:
     stage('Linting') {
       steps {
         sh '''
+          apk update && apk add py3-pip
           pip install flake8
           flake8 section-3-dockerizing-app/
           
