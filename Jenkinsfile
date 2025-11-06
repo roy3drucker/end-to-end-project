@@ -14,6 +14,10 @@ spec:
     image: alpine/helm:3.13.0
     command: ["cat"]
     tty: true
+  - name: python
+    image: python:3.10
+    command: ["cat"]
+    tty: true
 """
       defaultContainer 'kaniko'
     }
@@ -26,9 +30,11 @@ spec:
     DOCKERFILE_PATH = 'Dockerfile'
     BUILD_CONTEXT   = 'section-3-dockerizing-app'
     HELM_CHART_PATH = 'Helm/flask-aws-monitor'
+    HELM_RELEASE_NAME = 'flask-aws-monitor'
+    HELM_NAMESPACE  = 'flask-app'
+    HELM_TIMEOUT    = '5m'
     APP_PORT        = '5001'
     SERVICE_TYPE    = 'LoadBalancer'
-    GIT_CREDENTIALS_ID = 'github-push-token'
   }
 
   stages {
@@ -49,23 +55,16 @@ spec:
     }
 
     stage('Linting') {
-      agent {
-        docker {
-          image 'python:3.10'
-        }
-      }
       steps {
-        sh '''
-          apt-get update
-          apt-get install -y python3-pip curl
-          
-          pip install flake8
-          flake8 section-3-dockerizing-app/
-          
-          curl -L https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 -o /usr/local/bin/hadolint
-          chmod +x /usr/local/bin/hadolint
-          hadolint section-3-dockerizing-app/Dockerfile
-        '''
+        container('python') {
+          sh '''
+            pip install flake8
+            flake8 section-3-dockerizing-app/
+            curl -L https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 -o /usr/local/bin/hadolint
+            chmod +x /usr/local/bin/hadolint
+            hadolint section-3-dockerizing-app/Dockerfile
+          '''
+        }
       }
     }
 
@@ -90,30 +89,28 @@ spec:
 
     stage('Update values.yaml & Push to GitHub') {
       steps {
-        withCredentials([usernamePassword(credentialsId: env.GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
-          sh '''
-            echo "==> Update image tag in values.yaml"
-            sed -i "s|image: .*|image: ${IMAGE_REPO}:${IMAGE_TAG}|" ${HELM_CHART_PATH}/values.yaml
+        sh '''
+          sed -i "s|^image:.*|image: ${IMAGE_REPO}:${IMAGE_TAG}|" ${HELM_CHART_PATH}/values.yaml
 
-            echo "==> Git config and push"
-            git config user.email "ci@jenkins.com"
-            git config user.name "Jenkins CI"
-            git remote set-url origin https://${GIT_USER}:${GIT_TOKEN}@github.com/roy3drucker/end-to-end-project.git
-            git add ${HELM_CHART_PATH}/values.yaml
-            git commit -m "CI: Update image tag to ${IMAGE_TAG}"
-            git push origin main
-          '''
-        }
+          git config --global user.email "jenkins@example.com"
+          git config --global user.name "Jenkins CI"
+          git add ${HELM_CHART_PATH}/values.yaml
+          git commit -m "Update image tag to ${IMAGE_TAG}" || echo "No changes to commit"
+          git push origin main
+        '''
+      }
+    }
+
+    stage('Post Actions') {
+      steps {
+        echo "Pipeline completed successfully"
       }
     }
   }
 
   post {
-    success {
-      echo "✅ CI pipeline succeeded, Git updated – ArgoCD will deploy."
-    }
     failure {
-      echo "❌ Pipeline failed. Check logs for errors."
+      echo 'Pipeline failed! Check logs for details.'
     }
   }
 }
