@@ -28,7 +28,7 @@ spec:
     HELM_CHART_PATH = 'Helm/flask-aws-monitor'
     HELM_RELEASE_NAME = 'flask-aws-monitor'
     HELM_NAMESPACE  = 'flask-app'
-    HELM_TIMEOUT    = '15m'
+    HELM_TIMEOUT    = '30m'
     KUBECONFIG_CREDENTIALS_ID = 'minikube-kubeconfig'
     APP_PORT        = '5001'
     SERVICE_TYPE    = 'LoadBalancer'
