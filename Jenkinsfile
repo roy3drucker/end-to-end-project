@@ -18,6 +18,10 @@ spec:
     image: python:3.10
     command: ["cat"]
     tty: true
+  - name: git
+    image: alpine/git:2.45.2
+    command: ["cat"]
+    tty: true
 """
       defaultContainer 'kaniko'
     }
@@ -89,15 +93,17 @@ spec:
 
     stage('Update values.yaml & Push to GitHub') {
       steps {
-        sh '''
-          sed -i "s|^image:.*|image: ${IMAGE_REPO}:${IMAGE_TAG}|" ${HELM_CHART_PATH}/values.yaml
+        container('git') {
+          sh '''
+            sed -i "s|^image:.*|image: ${IMAGE_REPO}:${IMAGE_TAG}|" ${HELM_CHART_PATH}/values.yaml
 
-          git config --global user.email "jenkins@example.com"
-          git config --global user.name "Jenkins CI"
-          git add ${HELM_CHART_PATH}/values.yaml
-          git commit -m "Update image tag to ${IMAGE_TAG}" || echo "No changes to commit"
-          git push origin main
-        '''
+            git config --global user.email "jenkins@example.com"
+            git config --global user.name "Jenkins CI"
+            git add ${HELM_CHART_PATH}/values.yaml
+            git commit -m "Update image tag to ${IMAGE_TAG}" || echo "No changes to commit"
+            git push origin main
+          '''
+        }
       }
     }
 
