@@ -96,6 +96,10 @@ spec:
         container('git') {
           sh '''
             sed -i "s|^image:.*|image: ${IMAGE_REPO}:${IMAGE_TAG}|" ${HELM_CHART_PATH}/values.yaml
+
+            git config --global user.email "jenkins@example.com"
+            git config --global user.name "Jenkins CI"
+            git config --global --add safe.directory "$(pwd)"
             git config --global --add safe.directory /home/jenkins/agent/workspace/Jenkins-pipeline
             git config --global user.email "jenkins@example.com"
             git config --global user.name "Jenkins CI"
