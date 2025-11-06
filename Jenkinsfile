@@ -56,11 +56,13 @@ spec:
       }
       steps {
         sh '''
-          apk update && apk add py3-pip
+          apt-get update
+          apt-get install -y python3-pip curl
+          
           pip install flake8
           flake8 section-3-dockerizing-app/
           
-          wget -O /usr/local/bin/hadolint https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64
+          curl -L https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 -o /usr/local/bin/hadolint
           chmod +x /usr/local/bin/hadolint
           hadolint section-3-dockerizing-app/Dockerfile
         '''
