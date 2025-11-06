@@ -105,7 +105,7 @@ spec:
           withCredentials([file(credentialsId: env.KUBECONFIG_CREDENTIALS_ID, variable: 'KUBECONFIG_FILE')]) {
             sh '''
               set -euo pipefail
-              apk add --no-cache kubectl
+              wget -q -O /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/$(wget -q -O - https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x /usr/local/bin/kubectl
               export KUBECONFIG="${KUBECONFIG_FILE}"
               kubectl config use-context minikube
               kubectl config current-context
