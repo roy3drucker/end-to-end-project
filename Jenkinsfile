@@ -28,8 +28,6 @@ spec:
   }
 
   environment {
-    DOCKERHUB_USERNAME = credentials('dockerdrucker-username')
-    DOCKERHUB_PASSWORD = credentials('dockerdrucker-password')
     IMAGE_REPO      = 'dockerdrucker/flask-aws-app'
     DOCKERFILE_PATH = 'Dockerfile'
     BUILD_CONTEXT   = 'section-3-dockerizing-app'
@@ -39,6 +37,8 @@ spec:
     HELM_TIMEOUT    = '5m'
     APP_PORT        = '5001'
     SERVICE_TYPE    = 'LoadBalancer'
+    DOCKERHUB_USERNAME_CREDENTIAL_ID = 'dockerdrucker-username'
+    DOCKERHUB_PASSWORD_CREDENTIAL_ID = 'dockerdrucker-password'
     GIT_CREDENTIALS_ID = 'github-credentials'
     GIT_USER_EMAIL = 'jenkins@example.com'
     GIT_USER_NAME  = 'Jenkins CI'
@@ -77,27 +77,32 @@ spec:
 
     stage('Build & Push (Kaniko)') {
       steps {
-        sh '''
-          echo "==> Docker auth"
-          mkdir -p /kaniko/.docker
-          AUTH=$(printf "%s" "${DOCKERHUB_USERNAME}:${DOCKERHUB_PASSWORD}" | base64 | tr -d '\\n')
-          printf '{"auths":{"https://index.docker.io/v1/":{"auth":"%s"}}}\n' "$AUTH" > /kaniko/.docker/config.json
+        withCredentials([
+          string(credentialsId: env.DOCKERHUB_USERNAME_CREDENTIAL_ID, variable: 'DOCKERHUB_USERNAME'),
+          string(credentialsId: env.DOCKERHUB_PASSWORD_CREDENTIAL_ID, variable: 'DOCKERHUB_PASSWORD')
+        ]) {
+          sh '''
+            echo "==> Docker auth"
+            mkdir -p /kaniko/.docker
+            AUTH=$(printf "%s" "${DOCKERHUB_USERNAME}:${DOCKERHUB_PASSWORD}" | base64 | tr -d '\\n')
+            printf '{"auths":{"https://index.docker.io/v1/":{"auth":"%s"}}}\n' "$AUTH" > /kaniko/.docker/config.json
 
-          echo "==> Kaniko build & push"
-          /kaniko/executor \
-            --verbosity=debug \
-            --context="${BUILD_CONTEXT}" \
-            --dockerfile="${DOCKERFILE_PATH}" \
-            --destination="${IMAGE_REPO}:${IMAGE_TAG}" \
-            --destination="${IMAGE_REPO}:latest"
-        '''
+            echo "==> Kaniko build & push"
+            /kaniko/executor \
+              --verbosity=debug \
+              --context="${BUILD_CONTEXT}" \
+              --dockerfile="${DOCKERFILE_PATH}" \
+              --destination="${IMAGE_REPO}:${IMAGE_TAG}" \
+              --destination="${IMAGE_REPO}:latest"
+          '''
+        }
       }
     }
 
     stage('Update values.yaml & Push to GitHub') {
       steps {
-        container('git') { 
-          withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+        container('git') {
+          withCredentials([usernamePassword(credentialsId: env.GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
           sh '''
             sed -i "s|^image:.*|image: ${IMAGE_REPO}:${IMAGE_TAG}|" ${HELM_CHART_PATH}/values.yaml
             
