@@ -119,6 +119,7 @@ spec:
           }
         }
       }
+    }
 
       stage('Post Actions') {
         steps {
