@@ -40,8 +40,6 @@ spec:
     DOCKERHUB_USERNAME_CREDENTIAL_ID = 'dockerdrucker-username'
     DOCKERHUB_PASSWORD_CREDENTIAL_ID = 'dockerdrucker-password'
     GIT_CREDENTIALS_ID = 'github-credentials'
-    GIT_USER_EMAIL = 'jenkins@example.com'
-    GIT_USER_NAME  = 'Jenkins CI'
   }
 
   stages {
