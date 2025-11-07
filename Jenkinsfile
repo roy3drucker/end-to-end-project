@@ -102,18 +102,19 @@ spec:
     stage('Update values.yaml & Push to GitHub') {
       steps {
         container('git') {
-          withCredentials([usernamePassword(credentialsId: env.GIT_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+          withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
             sh '''
               sed -i "s|^image:.*|image: ${IMAGE_REPO}:${IMAGE_TAG}|" ${HELM_CHART_PATH}/values.yaml
 
               git config --global user.email "jenkins@example.com"
               git config --global user.name "Jenkins CI"
               git config --global --add safe.directory "$(pwd)"
-              git config --global --add safe.directory /home/jenkins/agent/workspace/Jenkins-pipeline
+              git config --global --add safe.directory /home/jenkins/agent/workspace/my-pipeline
               git config --global user.email "jenkins@example.com"
               git config --global user.name "Jenkins CI"
               git add ${HELM_CHART_PATH}/values.yaml
               git commit -m "Update image tag to ${IMAGE_TAG}" || echo "No changes to commit"
+              git remote set-url origin https://${GIT_USER}:${GIT_TOKEN}@github.com/roy3drucker/end-to-end-project.git
               git push origin main
             '''
           }
