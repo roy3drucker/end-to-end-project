@@ -1,7 +1,9 @@
 import os
 import boto3
 from flask import Flask, render_template_string
+from prometheus_flask_exporter import PrometheusMetrics
 
+metrics = PrometheusMetrics(app)
 app = Flask(__name__)
 
 # Fetch AWS credentials from environment variables
