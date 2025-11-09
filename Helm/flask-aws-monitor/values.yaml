@@ -1,5 +1,5 @@
 port: 5001
-image: dockerdrucker/flask-aws-app:20251109-162224
+image: dockerdrucker/flask-aws-app:20251109-162449
 serviceType: LoadBalancer
 
 metrics:
